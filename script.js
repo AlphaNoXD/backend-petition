@@ -1,43 +1,52 @@
-document.getElementById('petitionForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
+// Initialize Firebase
+  const firebaseConfig = {
+  apiKey: "AIzaSyD4betLzlYUpPpuKWaU4I9aP1Btt0JYMfw",
+  authDomain: "my-backend-petition.firebaseapp.com",
+  projectId: "my-backend-petition",
+  storageBucket: "my-backend-petition.firebasestorage.app",
+  messagingSenderId: "846261613441",
+  appId: "1:846261613441:web:fcd1ddd5b74c0156a9ae80",
+  measurementId: "G-QYBTGJYNNB"
+};
 
-    // Get form data
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Modify the form submission code
+document.getElementById('petitionForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const message = document.getElementById('message').value;
 
-    // Create an object to store the petition data
-    const petitionData = {
+    // Save to Firestore
+    db.collection("signatures").add({
         name: name,
         email: email,
         message: message
-    };
-
-    // Retrieve existing signatures from Local Storage
-    let signatures = JSON.parse(localStorage.getItem('signatures')) || [];
-    signatures.push(petitionData); // Add new signature to the array
-
-    // Save updated signatures back to Local Storage
-    localStorage.setItem('signatures', JSON.stringify(signatures));
-
-    // Display a response message
-    document.getElementById('responseMessage').innerText = 'Thank you for signing the petition!';
-
-    // Optionally, reset the form
-    this.reset();
-});
-    function displaySignatures() {
-    const signatures = JSON.parse(localStorage.getItem('signatures')) || [];
-    const signatureList = document.createElement('ul');
-
-    signatures.forEach(signature => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `${signature.name} (${signature.email}): ${signature.message}`;
-        signatureList.appendChild(listItem);
+    })
+    .then(() => {
+        document.getElementById('responseMessage').innerText = 'Thank you for signing the petition!';
+        this.reset();
+        displaySignatures();
+    })
+    .catch((error) => {
+        console.error("Error adding document: ", error);
     });
+});
 
-    document.body.appendChild(signatureList);
-}
+// Function to display signatures from Firestore
+function displaySignatures() {
+    const signatureList = document.getElementById('signatureList');
+    signatureList.innerHTML = '';
 
-// Call the function to display signatures when the page loads
-window.onload = displaySignatures;
+    db.collection("signatures").get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+            const signature = doc.data();
+            const listItem = document.createElement('li');
+            listItem.textContent = `${signature.name} (${signature.email}): ${signature.message}`;
+            signatureList.appendChild(listItem);
+        });
+    });
+    }
